@@ -103,6 +103,10 @@ The repository uses separate branches for stable work, development, documentatio
 - `docs/updates` — README, research, and project-documentation updates.
 - `feature/graph-controls` — planned graph editing and route-selection controls.
 - `feature/visual-improvements` — planned animation and interface improvements.
+- `feature/custom-graph` — planned support for user-defined graph nodes and edges.
+- `algorithm/priority-queue` — planned priority-queue implementation for comparison.
+- `test/browser-validation` — browser checks for route results and reset behavior.
+- `deploy/github-pages` — deployment configuration for hosting the static demo.
 
 Create a local feature branch from `develop` before starting a focused change:
 
