@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Network Route Optimizer — Dijkstra's Algorithm</title>
+<style>
+  :root{
+    --bg:#0d1520;
+    --panel:#141f30;
+    --panel2:#182640;
+    --accent:#3fc6f0;
+    --accent2:#7ee0c3;
+    --text:#e8edf5;
+    --muted:#8ea0bd;
+    --border:#233350;
+    --visited:#4ade80;
+    --current:#f5a83f;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; padding:0; max-width:480px; margin:0 auto;
+    background:var(--bg); color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-tap-highlight-color:transparent;
+  }
+  header{
+    padding:22px 18px 16px; text-align:center;
+    background:linear-gradient(160deg,#152238,#0d1520);
+    border-bottom:1px solid var(--border);
+  }
+  header h1{margin:0 0 4px; font-size:17px; letter-spacing:.3px;}
+  header p{margin:0; color:var(--muted); font-size:12px;}
+  .badges{display:flex; gap:6px; justify-content:center; margin-top:10px; flex-wrap:wrap;}
+  .badge{
+    font-size:10.5px; padding:4px 9px; border-radius:20px;
+    background:var(--panel2); color:var(--accent2); border:1px solid var(--border);
+  }
+  main{padding:16px;}
+  .card{
+    background:var(--panel); border:1px solid var(--border); border-radius:14px;
+    padding:16px; margin-bottom:14px;
+  }
+  .card h2{
+    font-size:13px; text-transform:uppercase; letter-spacing:.6px;
+    color:var(--accent2); margin:0 0 12px;
+  }
+  .graph-wrap{
+    background:#0a1220; border:1px solid var(--border); border-radius:10px;
+    padding:8px; overflow-x:auto; -webkit-overflow-scrolling:touch;
+  }
+  button{
+    -webkit-appearance:none; border:none; cursor:pointer;
+    font-family:inherit; font-weight:600;
+  }
+  .btn-primary{
+    width:100%; padding:12px; border-radius:9px; background:var(--accent);
+    color:#02222c; font-size:14px; margin-top:10px;
+  }
+  .btn-primary:active{transform:scale(.98);}
+  .btn-secondary{
+    width:100%; padding:10px; border-radius:9px; background:var(--panel2);
+    color:var(--text); font-size:12.5px; margin-top:8px; border:1px solid var(--border);
+  }
+  .btn-row{display:flex; gap:8px; margin-top:8px;}
+  .btn-row button{flex:1;}
+  .dist-table{width:100%; border-collapse:collapse; font-size:12.5px; margin-top:4px;}
+  .dist-table th{
+    background:var(--panel2); color:var(--accent2); text-align:center; padding:6px;
+    font-size:10.5px; text-transform:uppercase;
+  }
+  .dist-table td{padding:7px 6px; border-bottom:1px solid var(--border); text-align:center;}
+  .dist-table tr:last-child td{border-bottom:none;}
+  .node-tag{
+    display:inline-block; width:22px; height:22px; border-radius:50%; background:var(--panel2);
+    color:var(--text); font-size:11px; font-weight:700; line-height:22px; text-align:center;
+    border:1px solid var(--border);
+  }
+  .log-box{
+    font-size:12px; color:var(--muted); line-height:1.7; max-height:200px; overflow-y:auto;
+    margin-top:10px; border-top:1px solid var(--border); padding-top:10px;
+  }
+  .log-box .step{color:var(--accent2); font-weight:600;}
+  .result-banner{
+    text-align:center; padding:16px; border-radius:12px; margin-top:10px;
+    background:radial-gradient(circle at 50% 0%, #163049, #0f1929); border:1px solid var(--border);
+    display:none;
+  }
+  .result-banner.show{display:block;}
+  .result-banner .path{font-size:20px; font-weight:700; color:var(--accent2); font-family:ui-monospace,Menlo,Consolas,monospace;}
+  .result-banner .cost{font-size:12px; color:var(--muted); margin-top:4px;}
+  table.edges{width:100%; border-collapse:collapse; font-size:12.5px;}
+  table.edges td{padding:7px 4px; border-bottom:1px solid var(--border);}
+  table.edges td:first-child{color:var(--muted);}
+  table.edges td:last-child{text-align:right; font-weight:600;}
+  pre.code{
+    background:#0a1220; border:1px solid var(--border); border-radius:10px;
+    padding:12px; font-size:10.5px; line-height:1.55; overflow-x:auto;
+    font-family:ui-monospace,Menlo,Consolas,monospace; color:#c9d6ea;
+  }
+  .kw{color:#7ee0c3;} .tp{color:#3fc6f0;} .cm{color:#5b7291;} .fn{color:#ffd479;}
+  .toggle-row{display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;}
+  .pill-btn{
+    font-size:11px; padding:5px 10px; border-radius:8px; background:var(--panel2);
+    color:var(--accent2); border:1px solid var(--border);
+  }
+  .app-list{list-style:none; padding:0; margin:0; display:flex; flex-wrap:wrap; gap:6px;}
+  .app-list li{
+    font-size:11.5px; padding:6px 10px; border-radius:8px; background:var(--panel2);
+    color:var(--text); border:1px solid var(--border);
+  }
+  footer{
+    text-align:center; padding:18px 16px 26px; font-size:11px; color:var(--muted);
+    border-top:1px solid var(--border);
+  }
+  footer a{color:var(--accent);}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Network Route Optimizer</h1>
+  <p>Design and Analysis of Algorithms (DAA) — Dijkstra's Algorithm &nbsp;•&nbsp; GSSIPU Semester 5</p>
+  <div class="badges">
+    <span class="badge">Algorithm Optimization Project</span>
+    <span class="badge">Intermediate</span>
+  </div>
+</header>
+
+<main>
+
+  <div class="card">
+    <h2>▸ Network Graph</h2>
+    <div class="graph-wrap">
+      <svg id="graphSvg" viewBox="0 0 320 260" width="100%" style="min-width:300px;">
+        <!-- edges -->
+        <g id="edges" stroke="#3a4a6e" stroke-width="2">
+          <line x1="70" y1="60" x2="250" y2="60"/>   <!-- A-B -->
+          <line x1="70" y1="60" x2="70" y2="200"/>    <!-- A-C -->
+          <line x1="250" y1="60" x2="250" y2="200"/>  <!-- B-D -->
+          <line x1="70" y1="200" x2="250" y2="200"/>  <!-- C-D -->
+        </g>
+        <g id="edge-labels" fill="#8ea0bd" font-size="12" font-family="ui-monospace,Menlo,Consolas,monospace">
+          <text x="160" y="50" text-anchor="middle">4</text>
+          <text x="50" y="130" text-anchor="middle">2</text>
+          <text x="270" y="130" text-anchor="middle">5</text>
+          <text x="160" y="220" text-anchor="middle">1</text>
+        </g>
+        <g id="nodes">
+          <circle id="node-A" cx="70" cy="60" r="22" fill="#182640" stroke="#3fc6f0" stroke-width="2.5"/>
+          <text x="70" y="65" text-anchor="middle" fill="#e8edf5" font-size="15" font-weight="700">A</text>
+
+          <circle id="node-B" cx="250" cy="60" r="22" fill="#182640" stroke="#3fc6f0" stroke-width="2.5"/>
+          <text x="250" y="65" text-anchor="middle" fill="#e8edf5" font-size="15" font-weight="700">B</text>
+
+          <circle id="node-C" cx="70" cy="200" r="22" fill="#182640" stroke="#3fc6f0" stroke-width="2.5"/>
+          <text x="70" y="205" text-anchor="middle" fill="#e8edf5" font-size="15" font-weight="700">C</text>
+
+          <circle id="node-D" cx="250" cy="200" r="22" fill="#182640" stroke="#3fc6f0" stroke-width="2.5"/>
+          <text x="250" y="205" text-anchor="middle" fill="#e8edf5" font-size="15" font-weight="700">D</text>
+        </g>
+        <g id="dist-labels" fill="#f5a83f" font-size="11" font-family="ui-monospace,Menlo,Consolas,monospace" font-weight="700">
+          <text id="dlabel-A" x="70" y="34" text-anchor="middle">0</text>
+          <text id="dlabel-B" x="250" y="34" text-anchor="middle">∞</text>
+          <text id="dlabel-C" x="70" y="238" text-anchor="middle">∞</text>
+          <text id="dlabel-D" x="250" y="238" text-anchor="middle">∞</text>
+        </g>
+      </svg>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-secondary" id="stepBtn">Step Forward</button>
+      <button class="btn-secondary" id="resetBtn">Reset</button>
+    </div>
+    <button class="btn-primary" id="runBtn">Run Full Algorithm (A → D)</button>
+
+    <div class="result-banner" id="resultBanner">
+      <div class="path" id="resultPath">A → C → D</div>
+      <div class="cost" id="resultCost">Total Cost = 3</div>
+    </div>
+
+    <div class="log-box" id="logBox"></div>
+  </div>
+
+  <div class="card">
+    <h2>▸ Edge Weights</h2>
+    <table class="edges">
+      <tr><td>A → B</td><td>4</td></tr>
+      <tr><td>A → C</td><td>2</td></tr>
+      <tr><td>B → D</td><td>5</td></tr>
+      <tr><td>C → D</td><td>1</td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>▸ Algorithm Steps</h2>
+    <table class="dist-table">
+      <tr><th>Step</th><th>Action</th></tr>
+      <tr><td>1</td><td>Assign source = 0, all others = ∞</td></tr>
+      <tr><td>2</td><td>Select unvisited node with minimum distance</td></tr>
+      <tr><td>3</td><td>Update neighboring node distances</td></tr>
+      <tr><td>4</td><td>Repeat until all nodes are visited</td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>▸ Time Complexity</h2>
+    <table class="edges">
+      <tr><td>Basic Array Implementation</td><td>O(V²)</td></tr>
+      <tr><td>Priority Queue Implementation</td><td>O((V+E) log V)</td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <div class="toggle-row">
+      <h2 style="margin:0;">▸ C++ Source Code</h2>
+      <button class="pill-btn" id="toggleCodeBtn">Show</button>
+    </div>
+    <div id="codeBox" style="display:none;">
+<pre class="code"><span class="cm">#include</span><span class="tp">&lt;iostream&gt;</span>
+<span class="kw">using namespace</span> std;
+
+<span class="tp">int</span> <span class="fn">main</span>()
+{
+    <span class="tp">int</span> graph[4][4] =
+    {
+        {0,4,2,0},
+        {4,0,0,5},
+        {2,0,0,1},
+        {0,5,1,0}
+    };
+
+    <span class="tp">int</span> dist[4]={0,999,999,999};
+    <span class="tp">bool</span> visited[4]={<span class="kw">false</span>};
+
+    <span class="kw">for</span>(<span class="tp">int</span> i=0;i&lt;4;i++)
+    {
+        <span class="tp">int</span> min=999,u;
+
+        <span class="kw">for</span>(<span class="tp">int</span> j=0;j&lt;4;j++)
+        {
+            <span class="kw">if</span>(!visited[j] && dist[j]&lt;min)
+            {
+                min=dist[j];
+                u=j;
+            }
+        }
+
+        visited[u]=<span class="kw">true</span>;
+
+        <span class="kw">for</span>(<span class="tp">int</span> v=0;v&lt;4;v++)
+        {
+            <span class="kw">if</span>(graph[u][v] &&
+               dist[u]+graph[u][v]&lt;dist[v])
+            {
+                dist[v]=dist[u]+graph[u][v];
+            }
+        }
+    }
+
+    cout&lt;&lt;<span class="cm">"Shortest Distance A-&gt;D = "</span>
+        &lt;&lt;dist[3];
+
+    <span class="kw">return</span> 0;
+}</pre>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>▸ Applications</h2>
+    <ul class="app-list">
+      <li>Google Maps</li>
+      <li>Internet Routing</li>
+      <li>Navigation Systems</li>
+      <li>Logistics Companies</li>
+      <li>Smart Cities</li>
+    </ul>
+  </div>
+
+</main>
+
+<footer>
+  Network Route Optimizer Using Dijkstra's Algorithm — DAA Mini Project<br>
+  GSSIPU Semester 5 · Mayank Swaraj<br>
+  <a href="https://github.com/mayankswaraj18cr-cmd" target="_blank">GitHub</a> ·
+  <a href="https://linkedin.com/in/mayank-swaraj-4b84b6410" target="_blank">LinkedIn</a>
+</footer>
+
+<script>
+// Graph: A=0, B=1, C=2, D=3
+const nodes = ['A','B','C','D'];
+const graph = [
+  [0,4,2,0],
+  [4,0,0,5],
+  [2,0,0,1],
+  [0,5,1,0],
+];
+
+let dist, visited, steps, stepIndex;
+
+function initState(){
+  dist = [0, Infinity, Infinity, Infinity];
+  visited = [false,false,false,false];
+  steps = computeSteps();
+  stepIndex = 0;
+  updateVisual();
+  document.getElementById('logBox').innerHTML = '';
+  document.getElementById('resultBanner').classList.remove('show');
+}
+
+// Precompute full step-by-step trace mirroring the C++ loop exactly
+function computeSteps(){
+  const d = [0, Infinity, Infinity, Infinity];
+  const vis = [false,false,false,false];
+  const trace = [];
+  for(let i=0;i<4;i++){
+    let min = Infinity, u = -1;
+    for(let j=0;j<4;j++){
+      if(!vis[j] && d[j] < min){ min = d[j]; u = j; }
+    }
+    if(u === -1) break;
+    vis[u] = true;
+    const updates = [];
+    for(let v=0;v<4;v++){
+      if(graph[u][v] && d[u]+graph[u][v] < d[v]){
+        d[v] = d[u]+graph[u][v];
+        updates.push(v);
+      }
+    }
+    trace.push({visit:u, dist:d.slice(), updates:updates.slice()});
+  }
+  return trace;
+}
+
+function updateVisual(){
+  nodes.forEach((n,i) => {
+    const label = document.getElementById(`dlabel-${n}`);
+    label.textContent = dist[i] === Infinity ? '∞' : dist[i];
+    const circle = document.getElementById(`node-${n}`);
+    if(visited[i]){
+      circle.setAttribute('fill', 'rgba(74,222,128,.15)');
+      circle.setAttribute('stroke', '#4ade80');
+    } else {
+      circle.setAttribute('fill', '#182640');
+      circle.setAttribute('stroke', '#3fc6f0');
+    }
+  });
+}
+
+function appendLog(text){
+  const logBox = document.getElementById('logBox');
+  const div = document.createElement('div');
+  div.innerHTML = text;
+  logBox.appendChild(div);
+  logBox.scrollTop = logBox.scrollHeight;
+}
+
+function doStep(){
+  if(stepIndex >= steps.length){
+    showResult();
+    return;
+  }
+  const s = steps[stepIndex];
+  visited[s.visit] = true;
+  dist = s.dist.slice();
+  updateVisual();
+  const updText = s.updates.length
+    ? `Updated: ${s.updates.map(v => nodes[v]+'='+dist[v]).join(', ')}`
+    : 'No updates';
+  appendLog(`<span class="step">Step ${stepIndex+1}:</span> Visit node ${nodes[s.visit]}. ${updText}`);
+  stepIndex++;
+  if(stepIndex >= steps.length){
+    showResult();
+  }
+}
+
+function showResult(){
+  document.getElementById('resultBanner').classList.add('show');
+  document.getElementById('resultPath').textContent = 'A → C → D';
+  document.getElementById('resultCost').textContent = `Total Cost = ${dist[3]}`;
+}
+
+document.getElementById('stepBtn').addEventListener('click', doStep);
+document.getElementById('resetBtn').addEventListener('click', initState);
+document.getElementById('runBtn').addEventListener('click', () => {
+  initState();
+  const interval = setInterval(() => {
+    if(stepIndex >= steps.length){
+      clearInterval(interval);
+      return;
+    }
+    doStep();
+  }, 700);
+});
+
+document.getElementById('toggleCodeBtn').addEventListener('click', () => {
+  const box = document.getElementById('codeBox');
+  const btn = document.getElementById('toggleCodeBtn');
+  const show = box.style.display === 'none';
+  box.style.display = show ? 'block' : 'none';
+  btn.textContent = show ? 'Hide' : 'Show';
+});
+
+initState();
+</script>
+
+</body>
+</html>
